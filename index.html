@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valentine Envelope</title>
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+#envelopeContainer {
+  cursor: pointer;
+  perspective: 800px;
+}
+
+.envelope {
+  width: 250px;
+  height: 150px;
+  background: #ff5a7a;
+  border-radius: 8px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.8s ease;
+}
+
+.envelope::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: #ff3d6b;
+  clip-path: polygon(0 0, 50% 50%, 100% 0, 100% 100%, 0 100%);
+}
+
+.envelope.open {
+  transform: rotateX(-180deg);
+}
+
+.card {
+  display: none;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 32px;
+  padding: 30px 25px;
+  max-width: 400px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.2), inset 0 0 10px rgba(255,255,255,0.2);
+  text-align: center;
+  transition: opacity 0.5s ease;
+}
+
+.card.show {
+  display: block;
+  opacity: 1;
+}
+
+h1 {
+  font-size: 2rem;
+  color: #ff3d6b;
+}
+
+.heart {
+  font-size: 3rem;
+  color: #ff3d6b;
+  margin: 10px 0 15px;
+  animation: beat 1.2s infinite;
+}
+
+@keyframes beat {
+  0%, 100% { transform: scale(1); }
+  25%, 75% { transform: scale(1.15); }
+  50% { transform: scale(1.25); }
+}
+
+#message, #response {
+  background: rgba(255, 240, 245, 0.8);
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+#gifContainer, #yesGifContainer {
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  display: none; /* hide by default */
+  justify-content: center;
+  align-items: center;
+}
+
+#gifContainer.show, #yesGifContainer.show {
+  display: flex; /* show active GIF */
+  opacity: 1;
+}
+
+#gifContainer img, #yesGifContainer img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 16px;
+  transition: transform 0.3s ease;
+}
+
+#gifContainer img:hover, #yesGifContainer img:hover {
+  transform: scale(1.05);
+}
+
+button {
+  background: linear-gradient(135deg, #ff6a91, #ff3d6b);
+  color: #fff;
+  border-radius: 30px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  margin: 5px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s ease;
+}
+
+button:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+}
+
+.hidden { display: none; }
+
+canvas {
+  position: fixed;
+  top: 0; left: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+</style>
+</head>
+<body>
+
+<canvas id="confetti"></canvas>
+
+<div id="envelopeContainer" onclick="openEnvelope()">
+  <div class="envelope" id="envelope"></div>
+</div>
+
+<div class="card" id="card">
+  <h1>Will You Be My Valentine?</h1>
+  <div class="heart">❤️</div>
+  <p id="message">
+    I’ve been meaning to ask you something important.
+    You make my days better, my laughs louder,
+    and my life a whole lot sweeter.
+  </p>
+  <div id="buttons">
+    <button onclick="sayYes()">Yes 💖</button>
+    <button id="noBtn" onclick="sayNo()">No 🙈</button>
+  </div>
+  <p id="response" class="hidden"></p>
+  <div id="gifContainer">
+    <img id="noGif" src="" alt="Cute reaction" />
+  </div>
+  <div id="yesGifContainer">
+    <img id="yesGif" src="" alt="Happy reaction" />
+  </div>
+  <p id="more" class="hidden">
+    💕 SHE SAID YES 💕<br><br>
+    You just made me the happiest person.
+  </p>
+</div>
+
+<script>
+let envelope = document.getElementById('envelope');
+let card = document.getElementById('card');
+
+function openEnvelope() {
+  envelope.classList.add('open');
+  setTimeout(() => {
+    document.getElementById('envelopeContainer').style.display = 'none';
+    card.classList.add('show');
+  }, 800);
+}
+
+/* --- Yes/No logic --- */
+let noCount=0, noGifIndex=0, noMessageIndex=0, yesGifIndex=0;
+
+const messages = [
+  "Are you sure? 🥺",
+  "Think about it again 💭",
+  "I’ll ask nicely 😇",
+  "Okay but what if I ask one more time? 💕",
+  "PLESEEEEE!!🙏"
+];
+
+const gifs = [
+  "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZDNidHJ5NjF2cG1keDd4Z2ZrZng1dHF1eDZzY2RhbW12cjI0emZjYiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/35qdMmtFWqdeErlhDm/giphy.gif",
+  "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdXBuOTNmcXJpYmk2NmxvOHdzZzFvZ3B0c3Bhb3N2ZGlrcHNrcGFkbiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/y6lu312reRzVC46yFn/giphy.gif",
+  "https://media.giphy.com/media/OPU6wzx8JrHna/giphy.gif",
+  "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZDNidHJ5NjF2cG1keDd4Z2ZrZng1dHF1eDZzY2RhbW12cjI0emZjYiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Tga4sDdqQGONpPeNsS/giphy.gif",
+  "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdXBuOTNmcXJpYmk2NmxvOHdzZzFvZ3B0c3Bhb3N2ZGlrcHNrcGFkbiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/43wR1f8QU9KApWKjYt/giphy.gif"
+];
+
+const yesGifs = [
+  "https://media.giphy.com/media/26FLdmIp6wJr91JAI/giphy.gif",
+  "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif",
+  "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif"
+];
+
+function sayNo() {
+  noCount++;
+  const response = document.getElementById('response');
+  response.textContent = messages[noMessageIndex];
+  noMessageIndex = (noMessageIndex+1)%messages.length;
+  response.classList.remove('hidden');
+
+  const noGifContainer = document.getElementById('gifContainer');
+  const noGif = document.getElementById('noGif');
+  noGif.src = gifs[noGifIndex];
+  noGifIndex = (noGifIndex+1)%gifs.length;
+
+  noGifContainer.classList.add('show');
+  document.getElementById('yesGifContainer').classList.remove('show');
+
+  const noBtn = document.getElementById('noBtn');
+  const x = Math.random()*200-100;
+  const y = Math.random()*200-100;
+  noBtn.style.transform = `translate(${x}px,${y}px)`;
+}
+
+function sayYes() {
+  const yesGifContainer = document.getElementById('yesGifContainer');
+  const yesGif = document.getElementById('yesGif');
+  yesGif.src = yesGifs[yesGifIndex];
+  yesGifIndex = (yesGifIndex+1)%yesGifs.length;
+
+  yesGifContainer.classList.add('show');
+  document.getElementById('gifContainer').classList.remove('show');
+  document.getElementById('response').classList.add('hidden');
+
+  document.querySelector('h1').textContent = "Happy Valentine’s Day 💖";
+  document.getElementById('message').textContent = "I’m so happy you said yes. Thank you for being my Valentine and for making my life brighter just by being you.";
+
+  document.getElementById('more').classList.remove('hidden');
+  document.getElementById('buttons').style.display='none';
+
+  launchConfetti();
+}
+
+/* --- Confetti --- */
+function launchConfetti() {
+  const canvas=document.getElementById('confetti');
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  const pieces=[];
+  for(let i=0;i<80;i++){
+    pieces.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height-canvas.height,r:Math.random()*6+4,d:Math.random()*50+10,color:`hsl(${Math.random()*360},70%,60%)`,tilt:Math.random()*10-10});
+  }
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let p of pieces){
+      ctx.fillStyle=p.color;
+      ctx.beginPath();
+      ctx.moveTo(p.x+p.tilt,p.y);
+      ctx.lineTo(p.x+p.tilt+p.r/2,p.y+p.r);
+      ctx.lineTo(p.x+p.tilt-p.r/2,p.y+p.r);
+      ctx.closePath();
+      ctx.fill();
+      p.y+=2;
+      if(p.y>canvas.height)p.y=-10;
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+  setTimeout(()=>{ctx.clearRect(0,0,canvas.width,canvas.height)},4000);
+}
+</script>
+</body>
+</html>
